@@ -18,7 +18,10 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<User>> getAllUsers(Pageable pageable) {
+    public ResponseEntity<Page<User>> getAllUsers(
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        // Si tu servicio soporta búsqueda, puedes usar findAllWithFilters o findAllUsers
         Page<User> users = userService.findAllUsers(pageable);
         return ResponseEntity.ok(users);
     }
