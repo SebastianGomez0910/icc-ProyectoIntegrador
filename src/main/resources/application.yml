@@ -1,6 +1,7 @@
-# Conexión a PostgreSQL usando variables de entorno
 server:
   port: ${PORT:8080}
+  servlet:
+    context-path: /api
 
 spring:
   datasource:
@@ -9,10 +10,15 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
-    open-in-view: false # Agregado para cumplir con el requisito de despliegue
+    open-in-view: false 
     hibernate:
       ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+
+management:
+  health:
+    redis:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
