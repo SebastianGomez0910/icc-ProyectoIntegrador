@@ -22,6 +22,7 @@ public class RegistrationResponseDto {
     public RegistrationResponseDto(Long id, UUID registrationCode, Long eventId, String eventTitle,
             Long participantId, String participantName, String status, LocalDateTime registeredAt,
             LocalDateTime confirmedAt, LocalDateTime cancelledAt) {
+
         this.id = id;
         this.registrationCode = registrationCode;
         this.eventId = eventId;
@@ -32,6 +33,7 @@ public class RegistrationResponseDto {
         this.registeredAt = registeredAt;
         this.confirmedAt = confirmedAt;
         this.cancelledAt = cancelledAt;
+        
     }
 
     public Long getId() {
