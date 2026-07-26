@@ -1,4 +1,4 @@
-// 📁 registration/service/RegistrationService.java
+
 package ec.edu.ups.icc.proyectointegrador.registration.service;
 
 import org.springframework.data.domain.Page;
