@@ -22,3 +22,9 @@ management:
   endpoint:
     health:
       show-details: always
+
+# --- CONFIGURACIÓN DE SEGURIDAD JWT ---
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION}

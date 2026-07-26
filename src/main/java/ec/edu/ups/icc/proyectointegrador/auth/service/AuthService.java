@@ -4,11 +4,17 @@ import ec.edu.ups.icc.proyectointegrador.auth.dto.AuthResponseDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.LoginRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RefreshTokenRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RegisterRequestDto;
+import ec.edu.ups.icc.proyectointegrador.security.JwtService;
+import ec.edu.ups.icc.proyectointegrador.security.UserDetailsImpl;
 import ec.edu.ups.icc.proyectointegrador.user.entity.Role;
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.RoleRepository;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.UserRepository;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,22 +28,35 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository) {
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthService(UserRepository userRepository, 
+                       RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.authenticationManager = authenticationManager;
     }
 
     @Transactional
     public AuthResponseDto login(LoginRequestDto loginRequest) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getEmail(),
+                        loginRequest.getPassword()
+                )
+        );
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
-
-        if (!user.getPasswordHash().equals(loginRequest.getPassword())) {
-            throw new RuntimeException("Credenciales inválidas");
-        }
-
-        String accessToken = "dummy-access-token";
-        String refreshToken = "dummy-refresh-token";
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                UserDetails userDetails = UserDetailsImpl.build(user);
+        String accessToken = jwtService.generateToken(userDetails);
+        String refreshToken = "dummy-refresh-token"; 
 
         return buildAuthResponse(accessToken, refreshToken, user);
     }
@@ -52,8 +71,9 @@ public class AuthService {
         user.setFirstName(registerRequest.getFirstName());
         user.setLastName(registerRequest.getLastName());
         user.setEmail(registerRequest.getEmail());
-        user.setPasswordHash(registerRequest.getPassword());
-        user.setStatus("ACTIVE");
+        //implementamos el bycript para encriptar la contraseña antes de guardarla en la base de datos
+        user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setStatus("ACTIVE");;
 
         Role userRole = roleRepository.findByName("PARTICIPANT")
                 .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado"));
@@ -64,7 +84,8 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        String accessToken = "dummy-access-token";
+        UserDetails userDetails = UserDetailsImpl.build(savedUser);
+        String accessToken = jwtService.generateToken(userDetails);
         String refreshToken = "dummy-refresh-token";
 
         return buildAuthResponse(accessToken, refreshToken, savedUser);
