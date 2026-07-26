@@ -1,4 +1,4 @@
-package ec.edu.ups.icc.proyectointegrador.auth;
+package ec.edu.ups.icc.proyectointegrador.auth.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

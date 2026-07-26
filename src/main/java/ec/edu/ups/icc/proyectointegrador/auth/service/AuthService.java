@@ -72,7 +72,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponseDto refresh(RefreshTokenRequestDto request) {
-        User user = userRepository.findByEmail("admin@ejemplo.com")
+        User user = userRepository.findByEmail("alexis@ejemplo.com")
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String newAccessToken = "new-dummy-access-token";

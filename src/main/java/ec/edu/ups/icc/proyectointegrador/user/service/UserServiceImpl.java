@@ -1,5 +1,6 @@
 package ec.edu.ups.icc.proyectointegrador.user.service;
 
+import ec.edu.ups.icc.proyectointegrador.user.dto.UpdateUserDto;
 import ec.edu.ups.icc.proyectointegrador.user.entity.Role;
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.RoleRepository;
@@ -33,11 +34,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User updateUser(Long id, User userDetails) {
-        User user = findUserById(id);
-        user.setFirstName(userDetails.getFirstName());
-        user.setLastName(userDetails.getLastName());
-        user.setStatus(userDetails.getStatus());
+    public User updateUser(Long id, UpdateUserDto userDto) {
+       User user = findUserById(id);
+        user.setFirstName(userDto.getFirstName());
+        user.setLastName(userDto.getLastName());
+        
+        if (userDto.getStatus() != null) {
+            user.setStatus(userDto.getStatus());
+        }
+        
         return userRepository.save(user);
     }
 
