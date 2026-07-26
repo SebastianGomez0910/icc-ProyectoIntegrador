@@ -6,6 +6,8 @@ import ec.edu.ups.icc.proyectointegrador.auth.dto.RefreshTokenRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RegisterRequestDto;
 import ec.edu.ups.icc.proyectointegrador.security.JwtService;
 import ec.edu.ups.icc.proyectointegrador.security.UserDetailsImpl;
+import ec.edu.ups.icc.proyectointegrador.security.entities.RefreshToken;
+import ec.edu.ups.icc.proyectointegrador.security.service.RefreshTokenService;
 import ec.edu.ups.icc.proyectointegrador.user.entity.Role;
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.RoleRepository;
@@ -32,16 +34,20 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    private final RefreshTokenService refreshTokenService;
+
     public AuthService(UserRepository userRepository, 
                        RoleRepository roleRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
-                       AuthenticationManager authenticationManager) {
+                       AuthenticationManager authenticationManager,
+                       RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -54,9 +60,11 @@ public class AuthService {
         );
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
                 UserDetails userDetails = UserDetailsImpl.build(user);
-        String accessToken = jwtService.generateToken(userDetails);
-        String refreshToken = "dummy-refresh-token"; 
+                String accessToken = jwtService.generateToken(userDetails);
+                RefreshToken refreshTokenEntity = refreshTokenService.createRefreshToken(user.getId());
+                String refreshToken = refreshTokenEntity.getTokenHash(); 
 
         return buildAuthResponse(accessToken, refreshToken, user);
     }
@@ -71,9 +79,9 @@ public class AuthService {
         user.setFirstName(registerRequest.getFirstName());
         user.setLastName(registerRequest.getLastName());
         user.setEmail(registerRequest.getEmail());
-        //implementamos el bycript para encriptar la contraseña antes de guardarla en la base de datos
+        // implementamos el bycript para encriptar la contraseña antes de guardarla en la base de datos
         user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setStatus("ACTIVE");;
+        user.setStatus("ACTIVE");
 
         Role userRole = roleRepository.findByName("PARTICIPANT")
                 .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado"));
@@ -86,24 +94,31 @@ public class AuthService {
 
         UserDetails userDetails = UserDetailsImpl.build(savedUser);
         String accessToken = jwtService.generateToken(userDetails);
-        String refreshToken = "dummy-refresh-token";
+        
+        RefreshToken refreshTokenEntity = refreshTokenService.createRefreshToken(savedUser.getId());
+        String refreshToken = refreshTokenEntity.getTokenHash();
 
         return buildAuthResponse(accessToken, refreshToken, savedUser);
     }
 
     @Transactional
     public AuthResponseDto refresh(RefreshTokenRequestDto request) {
-        User user = userRepository.findByEmail("alexis@ejemplo.com")
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        RefreshToken tokenEntity=refreshTokenService.findByToken(request.getRefreshToken())
+                .orElseThrow(()-> new RuntimeException("Refres token no encontrado en la base de datos"));
 
-        String newAccessToken = "new-dummy-access-token";
-        String newRefreshToken = request.getRefreshToken();
+        refreshTokenService.verifyExpiration(tokenEntity);
+        User user=tokenEntity.getUser();
+        UserDetails userDetails = UserDetailsImpl.build(user);
+        String newAccessToken = jwtService.generateToken(userDetails);
 
-        return buildAuthResponse(newAccessToken, newRefreshToken, user);
+        return buildAuthResponse(newAccessToken, tokenEntity.getTokenHash(), user);
     }
 
     @Transactional
     public void logout(RefreshTokenRequestDto request) {
+        RefreshToken tokenEntity=refreshTokenService.findByToken(request.getRefreshToken())
+                .orElseThrow(()->new RuntimeException("Refresh Token no encontrado"));
+        refreshTokenService.deleteByUserId(tokenEntity.getUser().getId());
     }
 
     private AuthResponseDto buildAuthResponse(String accessToken, String refreshToken, User user) {
@@ -116,7 +131,7 @@ public class AuthService {
         return new AuthResponseDto(
                 accessToken,
                 refreshToken,
-                user.getId(), // <-- Agregamos el ID del usuario aquí
+                user.getId(), 
                 fullName,
                 user.getEmail(),
                 roles);

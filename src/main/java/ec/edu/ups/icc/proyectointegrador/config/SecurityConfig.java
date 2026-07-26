@@ -72,6 +72,8 @@ public class SecurityConfig {
                 .requestMatchers("/status/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/categories/**").authenticated()
+
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             );
 
