@@ -83,8 +83,8 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
         user.setStatus("ACTIVE");
 
-        Role userRole = roleRepository.findByName("PARTICIPANT")
-                .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado"));
+        Role userRole = roleRepository.findByNameIgnoreCase("PARTICIPANT")
+        .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado"));
 
         Set<Role> roles = new HashSet<>();
         roles.add(userRole);
