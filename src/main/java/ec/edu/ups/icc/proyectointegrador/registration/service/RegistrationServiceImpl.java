@@ -1,5 +1,6 @@
 package ec.edu.ups.icc.proyectointegrador.registration.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -129,7 +130,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new BusinessRuleException("El evento no está publicado y no admite inscripciones.");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
+
         if (event.getRegistrationStartAt() != null && now.isBefore(event.getRegistrationStartAt())) {
             throw new BusinessRuleException("El periodo de inscripción para este evento todavía no inicia.");
         }
