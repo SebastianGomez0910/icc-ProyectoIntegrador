@@ -16,16 +16,20 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
 
 management:
   health:
     redis:
       enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
 # --- CONFIGURACIÓN DE SEGURIDAD JWT ---
 jwt:

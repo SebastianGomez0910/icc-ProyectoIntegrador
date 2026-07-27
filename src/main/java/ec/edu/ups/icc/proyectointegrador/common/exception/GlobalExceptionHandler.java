@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.BusinessRuleException;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ConflictException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ForbiddenOperationException;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.TooManyRequestsException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -71,6 +73,30 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException ex, HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "Too Many Requests",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", "60") // El encabezado que exige la rúbrica
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenOperation(ForbiddenOperationException ex, HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     // Maneja cualquier otra excepción no controlada (Error 500)

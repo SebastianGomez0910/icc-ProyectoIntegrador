@@ -35,14 +35,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         long maxLimit = 0;
         Duration windowTime = Duration.ZERO;
 
-        if (path.contains("/auth/login")) {
-            operationKey = "login";
-            maxLimit = 5;
-            windowTime = Duration.ofMinutes(1);
-            allowed = rateLimitingService.isAllowed(operationKey, clientIp, maxLimit, windowTime);
-        } 
-   
-        else if (path.contains("/auth/register")) {
+         if (path.contains("/auth/register")) {
             operationKey = "register";
             maxLimit = 3;
             windowTime = Duration.ofHours(1);
@@ -99,6 +92,4 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
         return null;
     }
-
-    
 }

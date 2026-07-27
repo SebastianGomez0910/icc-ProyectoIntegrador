@@ -4,16 +4,23 @@ import ec.edu.ups.icc.proyectointegrador.auth.dto.AuthResponseDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.LoginRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RefreshTokenRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RegisterRequestDto;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.BusinessRuleException;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ConflictException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ForbiddenOperationException;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.TooManyRequestsException;
 import ec.edu.ups.icc.proyectointegrador.security.JwtService;
 import ec.edu.ups.icc.proyectointegrador.security.UserDetailsImpl;
 import ec.edu.ups.icc.proyectointegrador.security.entities.RefreshToken;
+import ec.edu.ups.icc.proyectointegrador.security.service.LoginAttemptService;
+import ec.edu.ups.icc.proyectointegrador.security.service.RateLimitingService;
 import ec.edu.ups.icc.proyectointegrador.security.service.RefreshTokenService;
 import ec.edu.ups.icc.proyectointegrador.user.entity.Role;
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.RoleRepository;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +28,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.AuthenticationException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -38,38 +46,74 @@ public class AuthService {
 
     private final RefreshTokenService refreshTokenService;
 
+    private final LoginAttemptService loginAttemptService;
+    private final RateLimitingService rateLimitingService;
+    private final HttpServletRequest request;
+
     public AuthService(UserRepository userRepository, 
                        RoleRepository roleRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        AuthenticationManager authenticationManager,
-                       RefreshTokenService refreshTokenService) {
+                       RefreshTokenService refreshTokenService,
+                       LoginAttemptService loginAttemptService,
+                       RateLimitingService rateLimitingService,
+                       HttpServletRequest request) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
         this.refreshTokenService = refreshTokenService;
+        this.loginAttemptService = loginAttemptService;
+        this.rateLimitingService = rateLimitingService;
+        this.request = request;
     }
 
     @Transactional
     public AuthResponseDto login(LoginRequestDto loginRequest) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
-                        loginRequest.getPassword()
-                )
-        );
-        User user = userRepository.findByEmail(loginRequest.getEmail())
+        String email = loginRequest.getEmail();
+        String clientIp = getClientIp(request);
+
+        // Rate Limiting por IP + Correo (5 peticiones por minuto)
+        String rateLimitIdentifier = clientIp + ":" + email;
+        boolean isAllowed = rateLimitingService.isAllowed("login", rateLimitIdentifier, 5, Duration.ofMinutes(1));
+        if (!isAllowed) {
+            throw new TooManyRequestsException("Has superado el límite de peticiones de inicio de sesión."); 
+        }
+        //Verificar si el usuario está bloqueado por intentos fallidos
+        if (loginAttemptService.isBlocked(email)) {
+            throw new ForbiddenOperationException("Cuenta temporalmente bloqueada por múltiples intentos fallidos. Intenta en 15 minutos.");
+        }
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, loginRequest.getPassword())
+            );
+        } catch (AuthenticationException e) {
+            loginAttemptService.loginFailed(email);
+            throw new BusinessRuleException("Credenciales incorrectas");
+        }
+
+        loginAttemptService.loginSucceeded(email);
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
-                UserDetails userDetails = UserDetailsImpl.build(user);
-                String accessToken = jwtService.generateToken(userDetails);
-                RefreshToken refreshTokenEntity = refreshTokenService.createRefreshToken(user.getId());
-                String refreshToken = refreshTokenEntity.getTokenHash(); 
+        UserDetails userDetails = UserDetailsImpl.build(user);
+        String accessToken = jwtService.generateToken(userDetails);
+        RefreshToken refreshTokenEntity = refreshTokenService.createRefreshToken(user.getId());
+        String refreshToken = refreshTokenEntity.getTokenHash(); 
 
         return buildAuthResponse(accessToken, refreshToken, user);
     }
+    
+        private String getClientIp(HttpServletRequest request) {
+            String xfHeader = request.getHeader("X-Forwarded-For");
+            if (xfHeader == null) {
+                return request.getRemoteAddr();
+            }
+            return xfHeader.split(",")[0];
+        }
 
     @Transactional
     public AuthResponseDto register(RegisterRequestDto registerRequest) {
