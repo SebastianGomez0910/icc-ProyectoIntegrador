@@ -1,5 +1,6 @@
 package ec.edu.ups.icc.proyectointegrador.user.service;
 
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
 import ec.edu.ups.icc.proyectointegrador.user.dto.UpdateUserDto;
 import ec.edu.ups.icc.proyectointegrador.user.entity.Role;
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
@@ -29,7 +30,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
     }
 
     @Override
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
     public void assignRoleToUser(Long userId, Long roleId) {
         User user = findUserById(userId);
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado con ID: " + roleId));
+                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado con ID: " + roleId));
 
         user.getRoles().add(role);
         userRepository.save(user);

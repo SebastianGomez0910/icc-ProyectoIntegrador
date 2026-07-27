@@ -4,6 +4,8 @@ import ec.edu.ups.icc.proyectointegrador.auth.dto.AuthResponseDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.LoginRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RefreshTokenRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RegisterRequestDto;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ConflictException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
 import ec.edu.ups.icc.proyectointegrador.security.JwtService;
 import ec.edu.ups.icc.proyectointegrador.security.UserDetailsImpl;
 import ec.edu.ups.icc.proyectointegrador.security.entities.RefreshToken;
@@ -59,7 +61,7 @@ public class AuthService {
                 )
         );
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
                 UserDetails userDetails = UserDetailsImpl.build(user);
                 String accessToken = jwtService.generateToken(userDetails);
@@ -72,7 +74,7 @@ public class AuthService {
     @Transactional
     public AuthResponseDto register(RegisterRequestDto registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new ConflictException("El email ya está registrado");
         }
 
         User user = new User();
@@ -84,7 +86,7 @@ public class AuthService {
         user.setStatus("ACTIVE");
 
         Role userRole = roleRepository.findByNameIgnoreCase("PARTICIPANT")
-        .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado"));
+        .orElseThrow(() -> new ResourceNotFoundException("Rol por defecto no encontrado"));
 
         Set<Role> roles = new HashSet<>();
         roles.add(userRole);
@@ -104,7 +106,7 @@ public class AuthService {
     @Transactional
     public AuthResponseDto refresh(RefreshTokenRequestDto request) {
         RefreshToken tokenEntity=refreshTokenService.findByToken(request.getRefreshToken())
-                .orElseThrow(()-> new RuntimeException("Refres token no encontrado en la base de datos"));
+                .orElseThrow(()-> new ResourceNotFoundException("Refres token no encontrado en la base de datos"));
 
         refreshTokenService.verifyExpiration(tokenEntity);
         User user=tokenEntity.getUser();
@@ -117,7 +119,7 @@ public class AuthService {
     @Transactional
     public void logout(RefreshTokenRequestDto request) {
         RefreshToken tokenEntity=refreshTokenService.findByToken(request.getRefreshToken())
-                .orElseThrow(()->new RuntimeException("Refresh Token no encontrado"));
+                .orElseThrow(()->new ResourceNotFoundException("Refresh Token no encontrado"));
         refreshTokenService.deleteByUserId(tokenEntity.getUser().getId());
     }
 

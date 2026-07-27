@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 
 import ec.edu.ups.icc.proyectointegrador.category.entity.Category;
 import ec.edu.ups.icc.proyectointegrador.category.repository.CategoryRepository;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.BusinessRuleException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ForbiddenOperationException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
 import ec.edu.ups.icc.proyectointegrador.event.dtos.EventRequestDto;
 import ec.edu.ups.icc.proyectointegrador.event.dtos.EventResponseDto;
 import ec.edu.ups.icc.proyectointegrador.event.dtos.SessionRequestDto;
@@ -47,9 +50,9 @@ public class EventServiceImpl implements EventService{
     @Transactional
     public EventResponseDto createEvent(EventRequestDto request, Long organizerId) {
         User organizer = userRepository.findById(organizerId)
-                .orElseThrow(() -> new RuntimeException("Organizador no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organizador no encontrado"));
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
         validateEventDates(request);
         Event event = eventMapper.toEntity(request, organizer, category);
         Event savedEvent = eventRepository.save(event);
@@ -60,7 +63,7 @@ public class EventServiceImpl implements EventService{
     @Transactional(readOnly = true)
     public EventResponseDto getEventById(Long id) {
         Event event = eventRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado o eliminado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado o eliminado"));
         List<Session> sessions = sessionRepository.findByEventIdOrderByStartAtAsc(id);
         return eventMapper.toDto(event, sessions);
     }
@@ -86,9 +89,9 @@ public class EventServiceImpl implements EventService{
     @Transactional
     public EventResponseDto updateEvent(Long id, EventRequestDto request, Long organizerId) {
        Event event = eventRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado o eliminado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado o eliminado"));
         if (!event.getOrganizer().getId().equals(organizerId)) {
-            throw new RuntimeException("No tienes permisos para editar este evento");
+            throw new ForbiddenOperationException("No tienes permisos para editar este evento");
         }
         validateEventDates(request);
         event.setTitle(request.getTitle());
@@ -105,7 +108,7 @@ public class EventServiceImpl implements EventService{
 
         if (!event.getCategory().getId().equals(request.getCategoryId())) {
             Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
             event.setCategory(category);
         }
 
@@ -118,9 +121,9 @@ public class EventServiceImpl implements EventService{
     @Transactional
     public void deleteEvent(Long id, Long organizerId) {
         Event event = eventRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado o ya eliminado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado o ya eliminado"));
         if (!event.getOrganizer().getId().equals(organizerId)) {
-            throw new RuntimeException("No tienes permisos para eliminar este evento");
+            throw new ForbiddenOperationException("No tienes permisos para eliminar este evento");
         }
         event.setDeleted(true);
         eventRepository.save(event);
@@ -130,15 +133,15 @@ public class EventServiceImpl implements EventService{
     @Transactional
     public SessionResponseDto addSessionToEvent(Long eventId, SessionRequestDto request, Long organizerId) {
         Event event = eventRepository.findByIdAndDeletedFalse(eventId)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado o eliminado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado o eliminado"));
         if (!event.getOrganizer().getId().equals(organizerId)) {
-            throw new RuntimeException("No tienes permisos para agregar sesiones a este evento");
+            throw new ForbiddenOperationException("No tienes permisos para agregar sesiones a este evento");
         }
         if (request.getStartAt().isAfter(request.getEndAt())) {
-            throw new RuntimeException("El inicio de la sesión debe ser anterior a su finalización.");
+            throw new BusinessRuleException("El inicio de la sesión debe ser anterior a su finalización.");
         }
         if (request.getStartAt().isBefore(event.getStartAt()) || request.getEndAt().isAfter(event.getEndAt())) {
-            throw new RuntimeException("Las fechas de la sesión deben estar dentro de las fechas del evento principal.");
+            throw new BusinessRuleException("Las fechas de la sesión deben estar dentro de las fechas del evento principal.");
         }
         Session session = new Session();
         session.setTitle(request.getTitle());
@@ -166,19 +169,19 @@ public class EventServiceImpl implements EventService{
         Instant now = Instant.now();
 
         if (request.getRegistrationStartAt() != null && now.isAfter(request.getRegistrationStartAt())) {
-            throw new RuntimeException("El periodo de inscripción no puede ser en el pasado.");
+            throw new BusinessRuleException("El periodo de inscripción no puede ser en el pasado.");
         }
         if (request.getRegistrationStartAt() != null && request.getRegistrationEndAt() != null &&
             request.getRegistrationStartAt().isAfter(request.getRegistrationEndAt())) {
-            throw new RuntimeException("El inicio de inscripción debe ser antes del fin de inscripción.");
+            throw new BusinessRuleException("El inicio de inscripción debe ser antes del fin de inscripción.");
         }
         if (request.getRegistrationEndAt() != null && request.getStartAt() != null &&
             request.getRegistrationEndAt().isAfter(request.getStartAt())) {
-            throw new RuntimeException("Las inscripciones deben cerrar antes de que inicie el evento.");
+            throw new BusinessRuleException("Las inscripciones deben cerrar antes de que inicie el evento.");
         }
         if (request.getStartAt() != null && request.getEndAt() != null &&
             request.getStartAt().isAfter(request.getEndAt())) {
-            throw new RuntimeException("La fecha de inicio del evento debe ser anterior a la de finalización.");
+            throw new BusinessRuleException("La fecha de inicio del evento debe ser anterior a la de finalización.");
         }
     }
 }
