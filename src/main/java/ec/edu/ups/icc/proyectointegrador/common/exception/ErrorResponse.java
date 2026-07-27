@@ -2,28 +2,37 @@ package ec.edu.ups.icc.proyectointegrador.common.exception;
 
 import java.time.LocalDateTime;
 
-import org.springframework.http.HttpStatus;
-
 public class ErrorResponse {
     
-    private HttpStatus status;
+    private int status;
+    private String error;
     private String message;
     private String path;
     private String timestamp;
 
-    public ErrorResponse(HttpStatus status, String message, String path) {
+    public ErrorResponse(int status, String error, String message, String path) {
         this.status = status;
+        this.error = error;
         this.message = message;
         this.path = path;
         this.timestamp = LocalDateTime.now().toString(); 
     }
 
-    public HttpStatus getStatus() {
+    // Getters y Setters
+    public int getStatus() {
         return status;
     }
 
-    public void setStatus(HttpStatus status) {
+    public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 
     public String getMessage() {
