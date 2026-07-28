@@ -30,9 +30,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint{
         logger.error("Error de autenticación: {}", authException.getMessage());
          
         ErrorResponse errorResponse = new ErrorResponse(
-            HttpStatus.UNAUTHORIZED,  
-            "Token de autenticación inválido o no proporcionado. Debe incluir un token válido en el header Authorization: Bearer <token>",
-            request.getRequestURI()   
+            HttpStatus.UNAUTHORIZED.value(),            
+            HttpStatus.UNAUTHORIZED.getReasonPhrase(),  
+            "Token de autenticación inválido o no proporcionado. Debe incluir un token válido", 
+            request.getRequestURI()                     
         );
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);  

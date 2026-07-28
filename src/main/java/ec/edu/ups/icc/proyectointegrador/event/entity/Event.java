@@ -1,5 +1,6 @@
 package ec.edu.ups.icc.proyectointegrador.event.entity;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import ec.edu.ups.icc.proyectointegrador.category.entity.Category;
@@ -39,16 +40,16 @@ public class Event extends BaseEntity{
     private Integer availableCapacity;
 
     @Column(name = "registration_start_at", nullable = false)
-    private LocalDateTime registrationStartAt;
+    private Instant registrationStartAt;
 
     @Column(name = "registration_end_at", nullable = false)
-    private LocalDateTime registrationEndAt;
+    private Instant registrationEndAt;
 
     @Column(name = "start_at", nullable = false)
-    private LocalDateTime startAt;
+    private Instant startAt;
 
     @Column(name = "end_at", nullable = false)
-    private LocalDateTime endAt;
+    private Instant endAt;
 
     @Column(nullable = false, length = 20)
     private String status = "DRAFT";
@@ -75,8 +76,8 @@ public class Event extends BaseEntity{
     }
 
     public Event(String title, String description, String modality, String location, String virtualUrl,
-            Integer capacity, Integer availableCapacity, LocalDateTime registrationStartAt,
-            LocalDateTime registrationEndAt, LocalDateTime startAt, LocalDateTime endAt, String status, Boolean deleted,
+            Integer capacity, Integer availableCapacity, Instant registrationStartAt,
+            Instant registrationEndAt, Instant startAt, Instant endAt, String status, Boolean deleted,
             Long version, User organizer, Category category) {
         this.title = title;
         this.description = description;
@@ -84,7 +85,6 @@ public class Event extends BaseEntity{
         this.location = location;
         this.virtualUrl = virtualUrl;
         this.capacity = capacity;
-        this.availableCapacity = availableCapacity;
         this.registrationStartAt = registrationStartAt;
         this.registrationEndAt = registrationEndAt;
         this.startAt = startAt;
@@ -152,38 +152,6 @@ public class Event extends BaseEntity{
         this.availableCapacity = availableCapacity;
     }
 
-    public LocalDateTime getRegistrationStartAt() {
-        return registrationStartAt;
-    }
-
-    public void setRegistrationStartAt(LocalDateTime registrationStartAt) {
-        this.registrationStartAt = registrationStartAt;
-    }
-
-    public LocalDateTime getRegistrationEndAt() {
-        return registrationEndAt;
-    }
-
-    public void setRegistrationEndAt(LocalDateTime registrationEndAt) {
-        this.registrationEndAt = registrationEndAt;
-    }
-
-    public LocalDateTime getStartAt() {
-        return startAt;
-    }
-
-    public void setStartAt(LocalDateTime startAt) {
-        this.startAt = startAt;
-    }
-
-    public LocalDateTime getEndAt() {
-        return endAt;
-    }
-
-    public void setEndAt(LocalDateTime endAt) {
-        this.endAt = endAt;
-    }
-
     public String getStatus() {
         return status;
     }
@@ -222,5 +190,37 @@ public class Event extends BaseEntity{
 
     public void setCategory(Category category) {
         this.category = category;
+    }
+
+    public Instant getRegistrationStartAt() {
+        return registrationStartAt;
+    }
+
+    public void setRegistrationStartAt(Instant registrationStartAt) {
+        this.registrationStartAt = registrationStartAt;
+    }
+
+    public Instant getRegistrationEndAt() {
+        return registrationEndAt;
+    }
+
+    public void setRegistrationEndAt(Instant registrationEndAt) {
+        this.registrationEndAt = registrationEndAt;
+    }
+
+    public Instant getStartAt() {
+        return startAt;
+    }
+
+    public void setStartAt(Instant startAt) {
+        this.startAt = startAt;
+    }
+
+    public Instant getEndAt() {
+        return endAt;
+    }
+
+    public void setEndAt(Instant endAt) {
+        this.endAt = endAt;
     }
 }

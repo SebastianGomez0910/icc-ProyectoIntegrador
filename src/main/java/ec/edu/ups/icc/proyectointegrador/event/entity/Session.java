@@ -1,5 +1,6 @@
 package ec.edu.ups.icc.proyectointegrador.event.entity;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import ec.edu.ups.icc.proyectointegrador.common.entity.BaseEntity;
@@ -20,10 +21,10 @@ public class Session extends BaseEntity{
     private String description;
 
     @Column(name = "start_at", nullable = false)
-    private LocalDateTime startAt;
+    private Instant startAt;
 
     @Column(name = "end_at", nullable = false)
-    private LocalDateTime endAt;
+    private Instant endAt;
 
     @Column(length = 200)
     private String location;
@@ -38,7 +39,7 @@ public class Session extends BaseEntity{
     public Session() {
     }
 
-    public Session(String title, String description, LocalDateTime startAt, LocalDateTime endAt, String location,
+    public Session(String title, String description, Instant startAt, Instant endAt, String location,
             String virtualUrl, Event event) {
         this.title = title;
         this.description = description;
@@ -65,22 +66,6 @@ public class Session extends BaseEntity{
         this.description = description;
     }
 
-    public LocalDateTime getStartAt() {
-        return startAt;
-    }
-
-    public void setStartAt(LocalDateTime startAt) {
-        this.startAt = startAt;
-    }
-
-    public LocalDateTime getEndAt() {
-        return endAt;
-    }
-
-    public void setEndAt(LocalDateTime endAt) {
-        this.endAt = endAt;
-    }
-
     public String getLocation() {
         return location;
     }
@@ -103,5 +88,21 @@ public class Session extends BaseEntity{
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    public Instant getStartAt() {
+        return startAt;
+    }
+
+    public void setStartAt(Instant startAt) {
+        this.startAt = startAt;
+    }
+
+    public Instant getEndAt() {
+        return endAt;
+    }
+
+    public void setEndAt(Instant endAt) {
+        this.endAt = endAt;
     }
 }
