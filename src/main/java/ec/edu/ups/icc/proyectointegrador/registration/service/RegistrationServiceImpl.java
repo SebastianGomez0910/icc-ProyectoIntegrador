@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ec.edu.ups.icc.proyectointegrador.audit.entity.AuditLog;
 import ec.edu.ups.icc.proyectointegrador.audit.repositories.AuditLogRepository;
-import ec.edu.ups.icc.proyectointegrador.common.exception.BusinessRuleException;
-import ec.edu.ups.icc.proyectointegrador.common.exception.ForbiddenOperationException;
-import ec.edu.ups.icc.proyectointegrador.common.exception.ResourceNotFoundException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.BusinessRuleException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ForbiddenOperationException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
 import ec.edu.ups.icc.proyectointegrador.event.entity.Event;
 import ec.edu.ups.icc.proyectointegrador.event.repositories.EventRepository;
 import ec.edu.ups.icc.proyectointegrador.registration.dto.RegistrationResponseDto;

@@ -1,5 +1,6 @@
 package ec.edu.ups.icc.proyectointegrador.common.exception;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 public class ErrorResponse {
@@ -15,7 +16,7 @@ public class ErrorResponse {
         this.error = error;
         this.message = message;
         this.path = path;
-        this.timestamp = LocalDateTime.now().toString(); 
+        this.timestamp = Instant.now().toString(); 
     }
 
     // Getters y Setters
