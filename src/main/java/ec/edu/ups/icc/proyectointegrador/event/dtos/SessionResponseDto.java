@@ -2,13 +2,27 @@ package ec.edu.ups.icc.proyectointegrador.event.dtos;
 
 import java.time.Instant;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Objeto que representa los detalles de una sesión o charla programada dentro de un evento")
 public class SessionResponseDto {
     
+    @Schema(description = "Identificador único de la sesión en la base de datos", example = "10")
     private Long id;
+
+    @Schema(description = "Título específico de la sesión o taller", example = "Introducción a los Controladores REST")
     private String title;
+
+    @Schema(description = "Fecha y hora exacta de inicio de la sesión (formato ISO-8601)", example = "2026-08-20T10:00:00Z")
     private Instant startAt;
+
+    @Schema(description = "Fecha y hora exacta de finalización de la sesión (formato ISO-8601)", example = "2026-08-20T12:00:00Z")
     private Instant endAt;
+
+    @Schema(description = "Ubicación física específica de la sesión", example = "Laboratorio de Cómputo - UPS")
     private String location;
+
+    @Schema(description = "Enlace de transmisión exclusivo para esta sesión", example = "https://zoom.us/j/987654321")
     private String virtualUrl;
     
     public SessionResponseDto() {

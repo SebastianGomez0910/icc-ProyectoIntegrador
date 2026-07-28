@@ -2,13 +2,27 @@ package ec.edu.ups.icc.proyectointegrador.user.dto;
 
 import java.util.Set;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Objeto que representa la información pública y perfil de un usuario registrado")
 public class UserResponseDto {
 
+    @Schema(description = "Identificador único del usuario en la base de datos", example = "1")
     private Long id;
+
+    @Schema(description = "Nombre del usuario", example = "Carlos")
     private String firstName;
+
+    @Schema(description = "Apellido del usuario", example = "Andrade")
     private String lastName;
+
+    @Schema(description = "Correo electrónico del usuario", example = "carlos.andrade@ejemplo.com")
     private String email;
+
+    @Schema(description = "Estado actual de la cuenta en el sistema", example = "ACTIVO")
     private String status;
+
+    @Schema(description = "Conjunto de roles o permisos asignados al usuario", example = "[\"PARTICIPANT\", \"ORGANIZER\"]")
     private Set<String> roles;
 
     public UserResponseDto() {

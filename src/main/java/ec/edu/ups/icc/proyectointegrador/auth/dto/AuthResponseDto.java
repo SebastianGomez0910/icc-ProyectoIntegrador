@@ -1,15 +1,30 @@
 package ec.edu.ups.icc.proyectointegrador.auth.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 
+@Schema(description = "Objeto que contiene el token de acceso y los datos básicos del usuario tras un inicio de sesión exitoso")
 public class AuthResponseDto {
 
+    @Schema(description = "Token JWT de acceso principal para consumir la API", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String token;
+
+    @Schema(description = "Token de refresco para obtener un nuevo token cuando el principal expire", example = "d290f1ee-6c54-4b01-90e6-d701748f0851")
     private String refreshToken;
+
+    @Schema(description = "Tipo de esquema de autenticación", example = "Bearer")
     private String type = "Bearer";
+    
+    @Schema(description = "Identificador único del usuario en la base de datos", example = "1")
     private Long userId;
+    
+    @Schema(description = "Nombre completo del usuario", example = "Juan Pérez")
     private String name;
+    
+    @Schema(description = "Correo electrónico del usuario", example = "juan.perez@example.com")
     private String email;
+
+    @Schema(description = "Conjunto de roles asignados al usuario", example = "[\"ROLE_USER\", \"ROLE_ADMIN\"]")
     private Set<String> roles;
 
     public AuthResponseDto() {
