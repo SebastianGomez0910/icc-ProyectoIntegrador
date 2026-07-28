@@ -1,5 +1,37 @@
 package ec.edu.ups.icc.proyectointegrador.report.service;
 
+import java.io.ByteArrayOutputStream;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.BusinessRuleException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ForbiddenOperationException;
+import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ResourceNotFoundException;
+import ec.edu.ups.icc.proyectointegrador.event.entity.Event;
+import ec.edu.ups.icc.proyectointegrador.event.repositories.EventRepository;
+import ec.edu.ups.icc.proyectointegrador.registration.entity.Registration;
+import ec.edu.ups.icc.proyectointegrador.registration.repositories.RegistrationRepository;
+import ec.edu.ups.icc.proyectointegrador.user.entity.User;
+import ec.edu.ups.icc.proyectointegrador.user.repositories.UserRepository;
+
 public class ReportServiceImpl {
     
     
@@ -64,6 +96,137 @@ public class ReportServiceImpl {
         } catch (Exception e) {
             throw new RuntimeException("No se pudo generar el reporte PDF de inscritos.", e);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] generateEventRegistrationsExcel(Long eventId, String requesterEmail) {
+        Event event = getEventChecked(eventId, requesterEmail);
+        List<Registration> registrations = registrationRepository
+                .findByEventIdAndStatusIn(eventId, REPORTABLE_STATUSES);
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Inscritos");
+
+            Row titleRow = sheet.createRow(0);
+            titleRow.createCell(0).setCellValue("Evento: " + event.getTitle());
+
+            Row header = sheet.createRow(2);
+            String[] columns = { "Participante", "Correo", "Estado", "Fecha de inscripción" };
+            for (int i = 0; i < columns.length; i++) {
+                header.createCell(i).setCellValue(columns[i]);
+            }
+
+            int rowIndex = 3;
+            for (Registration r : registrations) {
+                User participant = r.getParticipant();
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(participant.getFirstName() + " " + participant.getLastName());
+                row.createCell(1).setCellValue(participant.getEmail());
+                row.createCell(2).setCellValue(r.getStatus());
+                Cell dateCell = row.createCell(3);
+                dateCell.setCellValue(formatDate(r));
+            }
+
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo generar el reporte Excel de inscritos.", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] generateRegistrationCertificatePdf(Long registrationId, String requesterEmail) {
+        User requester = getUserByEmail(requesterEmail);
+
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Inscripción no encontrada con ID: " + registrationId));
+
+        if (!registration.getParticipant().getId().equals(requester.getId())) {
+            throw new ForbiddenOperationException("No puede descargar el comprobante de otra persona.");
+        }
+
+        if (!"CONFIRMED".equalsIgnoreCase(registration.getStatus())) {
+            throw new BusinessRuleException("Solo se puede emitir comprobante de una inscripción confirmada.");
+        }
+
+        Event event = registration.getEvent();
+
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document document = new Document(PageSize.A4);
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
+            Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
+
+            Paragraph title = new Paragraph("Comprobante de inscripción", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph("Participante: " + registration.getParticipant().getFirstName()
+                    + " " + registration.getParticipant().getLastName(), bodyFont));
+            document.add(new Paragraph("Evento: " + event.getTitle(), bodyFont));
+            document.add(new Paragraph("Código de inscripción: " + registration.getRegistrationCode(), bodyFont));
+            document.add(new Paragraph("Estado: " + registration.getStatus(), bodyFont));
+            document.add(new Paragraph("Fecha de inscripción: " + formatDate(registration), bodyFont));
+
+            document.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo generar el comprobante en PDF.", e);
+        }
+    }
+
+    private Event getEventChecked(Long eventId, String requesterEmail) {
+        User requester = getUserByEmail(requesterEmail);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado con ID: " + eventId));
+
+        boolean isOwner = event.getOrganizer() != null
+                && event.getOrganizer().getId().equals(requester.getId());
+
+        if (!isOwner && !isAdmin(requester)) {
+            throw new ForbiddenOperationException(
+                    "Solo el organizador propietario del evento o un ADMIN pueden generar este reporte.");
+        }
+        return event;
+    }
+
+    private boolean isAdmin(User user) {
+        if (user.getRoles() == null) {
+            return false;
+        }
+        return user.getRoles().stream().anyMatch(role -> "ADMIN".equalsIgnoreCase(role.getName()));
+    }
+
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado."));
+    }
+
+    private void addHeaderCell(PdfPTable table, String text, Font font) {
+        PdfPCell cell = new PdfPCell(new com.lowagie.text.Phrase(text, font));
+        table.addCell(cell);
+    }
+
+    // Registration.registeredAt es LocalDateTime (hora del servidor), a
+    // diferencia de Event que usa Instant. Se formatea tal cual, sin
+    // conversión de zona horaria.
+    private String formatDate(Registration r) {
+        if (r.getRegisteredAt() == null) {
+            return "-";
+        }
+        return DATE_FORMAT.format(r.getRegisteredAt());
     }
 
 }
