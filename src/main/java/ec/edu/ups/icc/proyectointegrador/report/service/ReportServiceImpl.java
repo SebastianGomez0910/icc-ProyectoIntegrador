@@ -32,6 +32,7 @@ import ec.edu.ups.icc.proyectointegrador.registration.repositories.RegistrationR
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
 import ec.edu.ups.icc.proyectointegrador.user.repositories.UserRepository;
 
+@Service
 public class ReportServiceImpl implements ReportService {
     
     

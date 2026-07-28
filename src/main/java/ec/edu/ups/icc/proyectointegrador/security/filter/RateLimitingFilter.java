@@ -38,7 +38,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
          if (path.contains("/auth/register")) {
             operationKey = "register";
             maxLimit = 3;
-            windowTime = Duration.ofHours(1);
+            windowTime = Duration.ofHours(1); //cambiar a una hhora
             allowed = rateLimitingService.isAllowed(operationKey, clientIp, maxLimit, windowTime);
         } 
         
