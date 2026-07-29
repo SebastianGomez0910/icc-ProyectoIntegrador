@@ -70,7 +70,6 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
-        // 1. Creamos el gestor en memoria
         InMemoryUserDetailsManager memoryManager = new InMemoryUserDetailsManager(
             User.withUsername(swaggerUser)
                 .password("{noop}" + swaggerPassword)
@@ -78,20 +77,16 @@ public class SecurityConfig {
                 .build()
         );
 
-        // 2. Pasamos el memoryManager directamente en el constructor del provider
-        DaoAuthenticationProvider customSwaggerAuthProvider = new DaoAuthenticationProvider(memoryManager);
-        customSwaggerAuthProvider.setPasswordEncoder(PasswordEncoderFactories.createDelegatingPasswordEncoder());
-
         http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
             .httpBasic(Customizer.withDefaults()) 
-            .authenticationProvider(customSwaggerAuthProvider)
+            .userDetailsService(memoryManager) 
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }
-    
+
     @Bean
     @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
