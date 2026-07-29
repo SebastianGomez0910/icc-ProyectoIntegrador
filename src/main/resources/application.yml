@@ -49,5 +49,5 @@ app:
 
 # Credenciales para acceder a la documentación de Swagger
 swagger:
-  user: ${SWAGGER_USER_ENV:evaluador}
-  password: ${SWAGGER_PASSWORD_ENV:evaluador123}
+  user: ${SWAGGER_USER_ENV:admin}
+  password: ${SWAGGER_PASSWORD_ENV:password123}
