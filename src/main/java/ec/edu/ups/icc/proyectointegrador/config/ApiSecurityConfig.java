@@ -31,7 +31,7 @@ public class ApiSecurityConfig {
 @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/error") // <-- AÑADE ESTO
+            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/error")           
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception
