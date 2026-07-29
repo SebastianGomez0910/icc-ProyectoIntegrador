@@ -21,7 +21,7 @@ spring:
     # Agregamos el dialecto explícito para evitar el error de metadata
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
 
 management:
