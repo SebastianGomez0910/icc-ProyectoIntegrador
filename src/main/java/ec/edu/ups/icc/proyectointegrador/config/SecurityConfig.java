@@ -96,22 +96,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(1) // Le decimos a Spring que evalúe este filtro primero
+    @Order(1)
     public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
-        // Creamos un usuario en memoria aislado de la base de datos
+        // CAMBIO AQUÍ: Usamos {noop} para evaluar la contraseña directa de la variable de entorno
         UserDetails user = User.withUsername(swaggerUser)
-                .password(passwordEncoder().encode(swaggerPassword))
+                .password("{noop}" + swaggerPassword)
                 .roles("SWAGGER")
                 .build();
         InMemoryUserDetailsManager memoryManager = new InMemoryUserDetailsManager(user);
 
         DaoAuthenticationProvider swaggerAuthProvider = new DaoAuthenticationProvider(memoryManager);
-        swaggerAuthProvider.setPasswordEncoder(passwordEncoder()); 
+        // Ya no necesitamos setear el passwordEncoder aquí porque {noop} maneja el texto plano de forma segura en memoria
 
-        http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")            .csrf(AbstractHttpConfigurer::disable)
+        http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-            .httpBasic(Customizer.withDefaults()) // Activa el cuadro de login en el navegador
+            .httpBasic(Customizer.withDefaults()) 
             .authenticationProvider(swaggerAuthProvider)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
