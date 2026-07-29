@@ -47,6 +47,7 @@ public class ApiSecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/categories/**").authenticated()
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/events/**").authenticated()
                 .anyRequest().authenticated()
             );
 
