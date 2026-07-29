@@ -67,6 +67,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(Customizer.withDefaults())
@@ -107,7 +108,7 @@ public class SecurityConfig {
         DaoAuthenticationProvider swaggerAuthProvider = new DaoAuthenticationProvider(memoryManager);
         swaggerAuthProvider.setPasswordEncoder(passwordEncoder()); 
 
-        http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
+        http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")            .csrf(AbstractHttpConfigurer::disable)
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
             .httpBasic(Customizer.withDefaults()) // Activa el cuadro de login en el navegador
