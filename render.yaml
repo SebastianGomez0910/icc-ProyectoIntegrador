@@ -44,13 +44,14 @@ services:
       - key: SWAGGER_PASSWORD_ENV
         value: "password123"
 
-  # 2. Tu Caché Redis (Ahora está correctamente dentro de services)
+  # 2. Tu Caché Redis (Ahora con la regla de seguridad IP)
   - type: redis
     name: academic-redis
     plan: free
     maxmemoryPolicy: noeviction
+    ipAllowList: [] # <--- Esta es la línea que Render pedía
 
-# 3. Tu Base de Datos PostgreSQL (Solo va Postgres aquí)
+# 3. Tu Base de Datos PostgreSQL
 databases:
   - name: academic-db
     databaseName: academic_events_db
