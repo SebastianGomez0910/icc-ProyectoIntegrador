@@ -28,10 +28,10 @@ public class ApiSecurityConfig {
         this.unauthorizedHandler = unauthorizedHandler;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
-    @Bean
+@Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/error") // <-- AÑADE ESTO
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception
