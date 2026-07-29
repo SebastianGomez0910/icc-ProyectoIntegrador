@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -77,11 +78,16 @@ public class SecurityConfig {
                 .build()
         );
 
+        DaoAuthenticationProvider swaggerProvider = new DaoAuthenticationProvider(memoryManager);
+        swaggerProvider.setPasswordEncoder(PasswordEncoderFactories.createDelegatingPasswordEncoder());
+        
+        AuthenticationManager swaggerAuthManager = new ProviderManager(swaggerProvider);
+
         http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
             .httpBasic(Customizer.withDefaults()) 
-            .userDetailsService(memoryManager) 
+            .authenticationManager(swaggerAuthManager) 
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
