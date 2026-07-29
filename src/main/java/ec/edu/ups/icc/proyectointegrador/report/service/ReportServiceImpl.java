@@ -1,8 +1,13 @@
 package ec.edu.ups.icc.proyectointegrador.report.service;
 
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -34,10 +39,10 @@ import ec.edu.ups.icc.proyectointegrador.user.repositories.UserRepository;
 
 @Service
 public class ReportServiceImpl implements ReportService {
-    
-    
+
     private static final List<String> REPORTABLE_STATUSES = List.of("PENDING", "CONFIRMED");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Guayaquil");
+private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final RegistrationRepository registrationRepository;
     private final EventRepository eventRepository;
@@ -53,10 +58,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] generateEventRegistrationsPdf(Long eventId, String requesterEmail) {
+    public byte[] generateEventRegistrationsPdf(Long eventId, String requesterEmail, LocalDate startDate, LocalDate endDate) {
         Event event = getEventChecked(eventId, requesterEmail);
-        List<Registration> registrations = registrationRepository
-                .findByEventIdAndStatusIn(eventId, REPORTABLE_STATUSES);
+        List<Registration> registrations = getFilteredRegistrations(eventId, startDate, endDate);
 
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -71,7 +75,10 @@ public class ReportServiceImpl implements ReportService {
 
             document.add(new Paragraph("Listado de inscritos", titleFont));
             document.add(new Paragraph("Evento: " + event.getTitle(), subtitleFont));
-            document.add(new Paragraph("Total de inscritos: " + registrations.size(), subtitleFont));
+            document.add(new Paragraph("Total de inscritos (filtrados): " + registrations.size(), subtitleFont));
+            if (startDate != null || endDate != null) {
+                document.add(new Paragraph("Rango de fechas: " + (startDate != null ? startDate : "Inicio") + " al " + (endDate != null ? endDate : "Fin"), subtitleFont));
+            }
             document.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(4);
@@ -101,10 +108,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] generateEventRegistrationsExcel(Long eventId, String requesterEmail) {
+    public byte[] generateEventRegistrationsExcel(Long eventId, String requesterEmail, LocalDate startDate, LocalDate endDate) {
         Event event = getEventChecked(eventId, requesterEmail);
-        List<Registration> registrations = registrationRepository
-                .findByEventIdAndStatusIn(eventId, REPORTABLE_STATUSES);
+        List<Registration> registrations = getFilteredRegistrations(eventId, startDate, endDate);
 
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Inscritos");
@@ -188,6 +194,29 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
+    // Método auxiliar para obtener y filtrar las inscripciones por rango de fechas de forma limpia
+    private List<Registration> getFilteredRegistrations(Long eventId, LocalDate startDate, LocalDate endDate) {
+        List<Registration> registrations = registrationRepository
+                .findByEventIdAndStatusIn(eventId, REPORTABLE_STATUSES);
+
+        if (startDate == null && endDate == null) {
+            return registrations;
+        }
+
+        return registrations.stream().filter(r -> {
+            if (r.getRegisteredAt() == null) return false;
+            LocalDate regDate = r.getRegisteredAt().toLocalDate();
+
+            if (startDate != null && regDate.isBefore(startDate)) {
+                return false;
+            }
+            if (endDate != null && regDate.isAfter(endDate)) {
+                return false;
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
+
     private Event getEventChecked(Long eventId, String requesterEmail) {
         User requester = getUserByEmail(requesterEmail);
         Event event = eventRepository.findById(eventId)
@@ -220,14 +249,13 @@ public class ReportServiceImpl implements ReportService {
         table.addCell(cell);
     }
 
-    // Registration.registeredAt es LocalDateTime (hora del servidor), a
-    // diferencia de Event que usa Instant. Se formatea tal cual, sin
-    // conversión de zona horaria.
     private String formatDate(Registration r) {
         if (r.getRegisteredAt() == null) {
             return "-";
         }
-        return DATE_FORMAT.format(r.getRegisteredAt());
+        ZonedDateTime guayaquilTime = r.getRegisteredAt()
+                .atZone(ZoneOffset.UTC) // Le decimos que el dato original está en UTC
+                .withZoneSameInstant(BUSINESS_ZONE); // Lo convertimos a la zona horaria de Guayaquil
+        return DATE_FORMAT.format(guayaquilTime);
     }
-
 }

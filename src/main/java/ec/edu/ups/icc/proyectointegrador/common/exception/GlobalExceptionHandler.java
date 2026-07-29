@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    //Reglas de Negocio (400)
+    // Conflictos y Duplicados (409)
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
-    //Acceso Prohibido (403)
+    // Reglas de Negocio y Validaciones de lógica (400)
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<ErrorResponse> handleBusinessRule(BusinessRuleException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(

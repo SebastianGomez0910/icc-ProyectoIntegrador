@@ -7,6 +7,7 @@ import ec.edu.ups.icc.proyectointegrador.auth.dto.AuthResponseDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.LoginRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RefreshTokenRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RegisterRequestDto;
+import ec.edu.ups.icc.proyectointegrador.auth.dto.UserProfileDto;
 import ec.edu.ups.icc.proyectointegrador.auth.service.AuthService;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -74,5 +77,15 @@ public class AuthController {
         authService.logout(request);
         return ResponseEntity.noContent().build();
     }
-    
+
+    @Operation(summary = "Obtener perfil de usuario", description = "Devuelve la información del usuario actualmente autenticado a partir de su token JWT.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Perfil recuperado exitosamente"),
+        @ApiResponse(responseCode = "401", description = "No autorizado o token inválido")
+    })
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileDto> getMe(Authentication authentication) {
+        UserProfileDto profile = authService.getAuthenticatedUser(authentication.getName());
+        return ResponseEntity.ok(profile);
+    }
 }

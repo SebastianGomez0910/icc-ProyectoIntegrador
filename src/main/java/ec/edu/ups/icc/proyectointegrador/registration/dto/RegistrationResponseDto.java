@@ -3,17 +3,39 @@ package ec.edu.ups.icc.proyectointegrador.registration.dto;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Objeto que contiene los detalles completos de la inscripción de un participante a un evento")
 public class RegistrationResponseDto {
 
+    @Schema(description = "Identificador único de la inscripción en la base de datos", example = "1")
     private Long id;
+
+    @Schema(description = "Código único de verificación o seguimiento de la inscripción", example = "a1b2c3d4-e5f6-7890-abcd-ef0123456789")
     private UUID registrationCode;
+
+    @Schema(description = "Identificador único del evento al que pertenece la inscripción", example = "15")
     private Long eventId;
+
+    @Schema(description = "Título o nombre del evento académico", example = "Taller Avanzado de Spring Boot")
     private String eventTitle;
+
+    @Schema(description = "Identificador único del usuario participante", example = "3")
     private Long participantId;
+
+    @Schema(description = "Nombre completo del participante inscrito", example = "Alexis Gomez")
     private String participantName;
+
+    @Schema(description = "Estado actual de la inscripción", example = "CONFIRMED")
     private String status;
+
+    @Schema(description = "Fecha y hora exacta en que se solicitó la inscripción", example = "2026-07-28T14:30:00")
     private LocalDateTime registeredAt;
+
+    @Schema(description = "Fecha y hora exacta en que se confirmó la inscripción", example = "2026-07-28T14:30:02")
     private LocalDateTime confirmedAt;
+
+    @Schema(description = "Fecha y hora exacta en que se canceló la inscripción (si aplica)")
     private LocalDateTime cancelledAt;
 
     public RegistrationResponseDto() {

@@ -4,6 +4,7 @@ import ec.edu.ups.icc.proyectointegrador.auth.dto.AuthResponseDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.LoginRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RefreshTokenRequestDto;
 import ec.edu.ups.icc.proyectointegrador.auth.dto.RegisterRequestDto;
+import ec.edu.ups.icc.proyectointegrador.auth.dto.UserProfileDto;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.BusinessRuleException;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ConflictException;
 import ec.edu.ups.icc.proyectointegrador.common.exception.domain.ForbiddenOperationException;
@@ -165,6 +166,20 @@ public class AuthService {
         RefreshToken tokenEntity=refreshTokenService.findByToken(request.getRefreshToken())
                 .orElseThrow(()->new ResourceNotFoundException("Refresh Token no encontrado"));
         refreshTokenService.deleteByUserId(tokenEntity.getUser().getId());
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileDto getAuthenticatedUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        
+        Set<String> roles = user.getRoles() != null
+                ? user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
+                : Set.of();
+                
+        String fullName = user.getFirstName() + " " + user.getLastName();
+        
+        return new UserProfileDto(user.getId(), fullName, user.getEmail(), roles);
     }
 
     private AuthResponseDto buildAuthResponse(String accessToken, String refreshToken, User user) {

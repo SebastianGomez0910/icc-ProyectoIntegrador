@@ -2,6 +2,7 @@ package ec.edu.ups.icc.proyectointegrador.event.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import ec.edu.ups.icc.proyectointegrador.event.dtos.SessionResponseDto;
 import ec.edu.ups.icc.proyectointegrador.event.entity.Event;
 import ec.edu.ups.icc.proyectointegrador.event.entity.Session;
 import ec.edu.ups.icc.proyectointegrador.event.mapper.EventMapper;
+import ec.edu.ups.icc.proyectointegrador.event.mapper.SessionMapper;
 import ec.edu.ups.icc.proyectointegrador.event.repositories.EventRepository;
 import ec.edu.ups.icc.proyectointegrador.event.repositories.SessionRepository;
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
@@ -33,17 +35,20 @@ public class EventServiceImpl implements EventService{
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
+    private final SessionMapper sessionMapper;
 
     public EventServiceImpl(EventRepository eventRepository, 
                             SessionRepository sessionRepository,
                             CategoryRepository categoryRepository, 
                             UserRepository userRepository, 
-                            EventMapper eventMapper) {
+                            EventMapper eventMapper,
+                            SessionMapper sessionMapper) {
         this.eventRepository = eventRepository;
         this.sessionRepository = sessionRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.eventMapper = eventMapper;
+        this.sessionMapper = sessionMapper;
     }
 
     @Override
@@ -83,38 +88,6 @@ public class EventServiceImpl implements EventService{
             events = eventRepository.findByStatusAndDeletedFalse(status, pageable);
         }
         return events.map(event -> eventMapper.toDto(event, null));
-    }
-
-    @Override
-    @Transactional
-    public EventResponseDto updateEvent(Long id, EventRequestDto request, Long organizerId) {
-       Event event = eventRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado o eliminado"));
-        if (!event.getOrganizer().getId().equals(organizerId)) {
-            throw new ForbiddenOperationException("No tienes permisos para editar este evento");
-        }
-        validateEventDates(request);
-        event.setTitle(request.getTitle());
-        event.setDescription(request.getDescription());
-        event.setModality(request.getModality());
-        event.setLocation(request.getLocation());
-        event.setVirtualUrl(request.getVirtualUrl());
-        event.setCapacity(request.getCapacity());
-        
-        event.setRegistrationStartAt(request.getRegistrationStartAt());
-        event.setRegistrationEndAt(request.getRegistrationEndAt());
-        event.setStartAt(request.getStartAt());
-        event.setEndAt(request.getEndAt());
-
-        if (!event.getCategory().getId().equals(request.getCategoryId())) {
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
-            event.setCategory(category);
-        }
-
-        Event updatedEvent = eventRepository.save(event);
-        List<Session> sessions = sessionRepository.findByEventIdOrderByStartAtAsc(id);
-        return eventMapper.toDto(updatedEvent, sessions);
     }
 
     @Override
@@ -165,6 +138,62 @@ public class EventServiceImpl implements EventService{
         return responseDto;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<SessionResponseDto> getEventSessions(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new ResourceNotFoundException("Evento no encontrado");
+        }
+        List<Session> sessions = sessionRepository.findByEventIdOrderByStartAtAsc(eventId);
+        
+        return sessions.stream().map(sessionMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public SessionResponseDto updateSession(Long sessionId, SessionRequestDto request, Long organizerId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sesión no encontrada"));
+        Event event = session.getEvent();
+
+        //Validar propiedad del evento
+        if (!event.getOrganizer().getId().equals(organizerId)) {
+            throw new ForbiddenOperationException("No tienes permisos para editar las sesiones de este evento");
+        }
+        
+        //Validar coherencia de fechas
+        if (request.getStartAt().isAfter(request.getEndAt())) {
+            throw new BusinessRuleException("El inicio de la sesión debe ser anterior a su finalización.");
+        }
+        if (request.getStartAt().isBefore(event.getStartAt()) || request.getEndAt().isAfter(event.getEndAt())) {
+            throw new BusinessRuleException("Las fechas de la sesión deben estar estrictamente dentro de las fechas del evento principal.");
+        }
+
+       session.setTitle(request.getTitle());
+        session.setDescription(request.getDescription());
+        session.setStartAt(request.getStartAt());
+        session.setEndAt(request.getEndAt());
+        session.setLocation(request.getLocation());
+        session.setVirtualUrl(request.getVirtualUrl());
+
+        Session updatedSession = sessionRepository.save(session);
+        
+        return sessionMapper.toDto(updatedSession);
+    }
+
+    @Override
+    @Transactional
+    public void deleteSession(Long sessionId, Long organizerId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sesión no encontrada"));
+                
+        if (!session.getEvent().getOrganizer().getId().equals(organizerId)) {
+            throw new ForbiddenOperationException("No tienes permisos para eliminar las sesiones de este evento");
+        }
+        
+        sessionRepository.delete(session);
+    }
+
     private void validateEventDates(EventRequestDto request) {
         Instant now = Instant.now();
 
@@ -183,5 +212,23 @@ public class EventServiceImpl implements EventService{
             request.getStartAt().isAfter(request.getEndAt())) {
             throw new BusinessRuleException("La fecha de inicio del evento debe ser anterior a la de finalización.");
         }
+    }
+
+   @Override
+    @Transactional
+    public EventResponseDto updateEventStatus(Long id, String status, Long organizerId) {
+        Event event = eventRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado o eliminado"));
+        
+        if (!event.getOrganizer().getId().equals(organizerId)) {
+            throw new ForbiddenOperationException("No tienes permisos para modificar el estado de este evento");
+        }
+
+        // Validar opcionalmente que el status enviado sea válido (ej. DRAFT, PUBLISHED, etc.)
+        event.setStatus(status);
+
+        Event updatedEvent = eventRepository.save(event);
+        List<Session> sessions = sessionRepository.findByEventIdOrderByStartAtAsc(id);
+        return eventMapper.toDto(updatedEvent, sessions);
     }
 }
