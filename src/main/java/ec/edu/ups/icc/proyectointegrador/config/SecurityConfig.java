@@ -69,18 +69,19 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
-        http
-            .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
+        InMemoryUserDetailsManager swaggerUserDetailsService = new InMemoryUserDetailsManager(
+            User.withUsername(swaggerUser)
+                .password("{noop}" + swaggerPassword)
+                .roles("SWAGGER")
+                .build()
+        );
+
+        http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-            .httpBasic(Customizer.withDefaults())
-            .userDetailsService(new org.springframework.security.provisioning.InMemoryUserDetailsManager(
-                org.springframework.security.core.userdetails.User.withUsername(swaggerUser)
-                    .password("{noop}" + swaggerPassword)
-                    .roles("SWAGGER")
-                    .build()
-            ))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+            .httpBasic(Customizer.withDefaults()) 
+            .userDetailsService(swaggerUserDetailsService)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }
