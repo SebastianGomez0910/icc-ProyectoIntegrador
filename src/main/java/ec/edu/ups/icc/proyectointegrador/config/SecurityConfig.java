@@ -67,6 +67,25 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .httpBasic(Customizer.withDefaults())
+            .userDetailsService(new org.springframework.security.provisioning.InMemoryUserDetailsManager(
+                org.springframework.security.core.userdetails.User.withUsername(swaggerUser)
+                    .password("{noop}" + swaggerPassword)
+                    .roles("SWAGGER")
+                    .build()
+            ))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.build();
+    }
+
+    @Bean
     @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -91,29 +110,6 @@ public class SecurityConfig {
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
-
-    @Bean
-    @Order(1)
-    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
-        // CAMBIO AQUÍ: Usamos {noop} para evaluar la contraseña directa de la variable de entorno
-        UserDetails user = User.withUsername(swaggerUser)
-                .password("{noop}" + swaggerPassword)
-                .roles("SWAGGER")
-                .build();
-        InMemoryUserDetailsManager memoryManager = new InMemoryUserDetailsManager(user);
-
-        DaoAuthenticationProvider swaggerAuthProvider = new DaoAuthenticationProvider(memoryManager);
-        // Ya no necesitamos setear el passwordEncoder aquí porque {noop} maneja el texto plano de forma segura en memoria
-
-        http.securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-            .httpBasic(Customizer.withDefaults()) 
-            .authenticationProvider(swaggerAuthProvider)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }
