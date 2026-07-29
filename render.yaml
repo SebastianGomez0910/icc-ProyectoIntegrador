@@ -3,7 +3,7 @@ services:
   - type: web
     name: academic-events-api
     env: docker
-    region: ohio 
+    region: oregon 
     plan: free
     branch: main
     envVars:
