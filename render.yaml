@@ -1,8 +1,9 @@
 services:
+  # 1. Tu Web Service (Backend Spring Boot)
   - type: web
     name: academic-events-api
     env: docker
-    region: ohio # O la región que prefieras
+    region: ohio 
     plan: free
     branch: main
     envVars:
@@ -43,13 +44,15 @@ services:
       - key: SWAGGER_PASSWORD_ENV
         value: "password123"
 
+  # 2. Tu Caché Redis (Ahora está correctamente dentro de services)
+  - type: redis
+    name: academic-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+
+# 3. Tu Base de Datos PostgreSQL (Solo va Postgres aquí)
 databases:
   - name: academic-db
     databaseName: academic_events_db
     user: ups
     plan: free
-
-  - name: academic-redis
-    type: redis
-    plan: free
-    maxmemoryPolicy: noeviction
