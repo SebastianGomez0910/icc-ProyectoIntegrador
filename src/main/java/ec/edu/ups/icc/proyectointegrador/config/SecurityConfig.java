@@ -35,10 +35,10 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${SWAGGER_USER:admin}")
+    @Value("${swagger.user}")
     private String swaggerUser;
 
-    @Value("${SWAGGER_PASSWORD:password123}")
+    @Value("${swagger.password}")
     private String swaggerPassword;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
