@@ -28,10 +28,12 @@ public class ApiSecurityConfig {
         this.unauthorizedHandler = unauthorizedHandler;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-@Bean
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/registrations/**", "/error")            
+            // 1. Agregamos "/reports/**" a la lista del matcher
+            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/registrations/**", "/reports/**", "/error")            
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception
@@ -49,6 +51,8 @@ public class ApiSecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/registrations/**").authenticated()
                 .requestMatchers("/events/**").authenticated()
+                // 2. Agregamos explícitamente los reportes para que exijan autenticación
+                .requestMatchers("/reports/**").authenticated() 
                 .anyRequest().authenticated()
             );
 
