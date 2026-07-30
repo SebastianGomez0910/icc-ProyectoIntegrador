@@ -32,8 +32,8 @@ public class ApiSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Agregamos "/reports/**" a la lista del matcher
-            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/registrations/**", "/reports/**", "/error")            
+            
+            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/registrations/**", "/reports/**", "/my-registrations/**", "/error")            
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception
@@ -51,6 +51,7 @@ public class ApiSecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/registrations/**").authenticated()
                 .requestMatchers("/events/**").authenticated()
+                .requestMatchers("/my-registrations/**").authenticated()
                 // 2. Agregamos explícitamente los reportes para que exijan autenticación
                 .requestMatchers("/reports/**").authenticated() 
                 .anyRequest().authenticated()
