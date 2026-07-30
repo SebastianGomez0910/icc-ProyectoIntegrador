@@ -195,8 +195,7 @@ Acceso restringido al organizador propietario del evento o a un ADMIN.
 
 ### Diagrama entidad-relación
 
-> ⏳ **Pendiente**: falta generar y enlazar aquí el diagrama ER a partir de
-> `V1__initial_schema_and_data.sql` (entregable requerido por la guía).
+![Diagrama entidad-relación](./assets/diagrama-er.png)
 
 ## Despliegue
 
@@ -214,3 +213,7 @@ El `.jar` generado queda en `build/libs/`.
 - **Swagger UI:** `https://academic-events-api-poo7.onrender.com/api/swagger-ui/index.html`
 - PostgreSQL y Redis como servicios independientes.
 - Variables de entorno configuradas en el panel de Render, no en el código.
+
+## Video de sustentación
+
+📹 [Ver video técnico del proyecto](https://youtu.be/pCReNZ5PWnk?si=TXk5n-ChJLoX8Fro)
