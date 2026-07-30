@@ -31,7 +31,7 @@ public class ApiSecurityConfig {
 @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/error")           
+            .securityMatcher("/auth/**", "/status/**", "/admin/**", "/categories/**", "/events/**", "/registrations/**", "/error")            
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception
@@ -47,6 +47,7 @@ public class ApiSecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/categories/**").authenticated()
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/registrations/**").authenticated()
                 .requestMatchers("/events/**").authenticated()
                 .anyRequest().authenticated()
             );
