@@ -1,0 +1,59 @@
+services:
+  # 1. Tu Web Service (Backend Spring Boot)
+  - type: web
+    name: academic-events-api
+    env: docker
+    region: oregon 
+    plan: free
+    branch: main
+    envVars:
+      - key: SPRING_JPA_OPEN_IN_VIEW
+        value: "false"
+      - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+        value: "5"
+      - key: DB_URL
+        fromDatabase:
+          name: academic-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: academic-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: academic-db
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: academic-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: academic-redis
+          property: port
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ACCESS_EXPIRATION
+        value: "86400000"
+      - key: JWT_REFRESH_EXPIRATION
+        value: "604800000"
+      - key: SWAGGER_USER_ENV
+        value: "admin"
+      - key: SWAGGER_PASSWORD_ENV
+        value: "password123"
+
+  # 2. Tu Caché Redis (Ahora con la regla de seguridad IP)
+  - type: redis
+    name: academic-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # <--- Esta es la línea que Render pedía
+
+# 3. Tu Base de Datos PostgreSQL
+databases:
+  - name: academic-db
+    databaseName: academic_events_db
+    user: ups
+    plan: free

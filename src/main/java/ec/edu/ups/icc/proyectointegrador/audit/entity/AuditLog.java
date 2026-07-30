@@ -2,6 +2,9 @@ package ec.edu.ups.icc.proyectointegrador.audit.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import ec.edu.ups.icc.proyectointegrador.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,9 +38,11 @@ public class AuditLog {
     @Column(name = "resource_id")
     private Long resourceId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "previous_value", columnDefinition = "jsonb")
     private String previousValue;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "new_value", columnDefinition = "jsonb")
     private String newValue;
 

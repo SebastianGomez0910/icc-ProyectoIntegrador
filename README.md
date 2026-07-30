@@ -81,7 +81,15 @@ el contenedor de la base de datos.
 docker compose up -d
 ```
 
-### 2. Documentación interactiva (Swagger)
+### 2. Ejecutar la aplicación Spring Boot
+
+```bash
+./gradlew bootRun
+```
+
+La API estará disponible por defecto en: `http://localhost:8080/api`
+
+### 3. Documentación interactiva (Swagger)
 
 ```
 http://localhost:8080/api/swagger-ui/index.html
@@ -125,6 +133,11 @@ peticiones (`429 Too Many Requests`):
 pip install requests
 python script.py
 ```
+
+> Nota: si necesitas reiniciar los contadores de intentos durante las pruebas:
+> ```bash
+> docker compose exec redis redis-cli FLUSHALL
+> ```
 
 ### Flujo de demostración (video técnico)
 

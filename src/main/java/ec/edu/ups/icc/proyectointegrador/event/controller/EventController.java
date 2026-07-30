@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 
 import ec.edu.ups.icc.proyectointegrador.event.dtos.EventRequestDto;
 import ec.edu.ups.icc.proyectointegrador.event.dtos.EventResponseDto;
+import ec.edu.ups.icc.proyectointegrador.event.dtos.EventStatusRequestDto;
 import ec.edu.ups.icc.proyectointegrador.event.dtos.SessionRequestDto;
 import ec.edu.ups.icc.proyectointegrador.event.dtos.SessionResponseDto;
 import ec.edu.ups.icc.proyectointegrador.event.service.EventService;
@@ -63,25 +65,6 @@ public class EventController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Actualizar evento", description = "Modifica los datos de un evento existente. Solo el organizador original del evento tiene permiso para realizar esta acción.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Evento actualizado exitosamente"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-        @ApiResponse(responseCode = "403", description = "Acceso denegado (El usuario no es el organizador)"),
-        @ApiResponse(responseCode = "404", description = "El evento no existe")
-    })
-    @PutMapping("/{id}")
-    public ResponseEntity<EventResponseDto> updateEvent(
-            @PathVariable Long id,
-            @RequestBody EventRequestDto request,
-            Authentication authentication) {
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long organizerId = userDetails.getId();
-
-        EventResponseDto response = eventService.updateEvent(id, request, organizerId);
-        return ResponseEntity.ok(response);
-    }
-
     @Operation(summary = "Eliminar evento", description = "Cancela y elimina un evento del sistema. Solo el organizador original puede realizar esta acción.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Evento eliminado exitosamente (No Content)"),
@@ -125,6 +108,25 @@ public class EventController {
         
         Page<EventResponseDto> response = eventService.getPublicEvents(title, categoryId, modality, pageable);
         
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Actualizar estado de un evento", description = "Permite al organizador cambiar el estado de un evento (ej. pasar de DRAFT a PUBLISHED).")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Estado del evento actualizado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Estado inválido"),
+        @ApiResponse(responseCode = "403", description = "Acceso denegado (No eres el organizador del evento)"),
+        @ApiResponse(responseCode = "404", description = "Evento no encontrado")
+    })
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<EventResponseDto> updateStatus(
+            @PathVariable Long id,
+            @RequestBody EventStatusRequestDto request,
+            Authentication authentication) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long organizerId = userDetails.getId();
+        
+        EventResponseDto response = eventService.updateEventStatus(id, request.getStatuts(), organizerId);
         return ResponseEntity.ok(response);
     }
 }
